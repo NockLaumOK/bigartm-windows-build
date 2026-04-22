@@ -29,6 +29,7 @@
 # Other libraries
 vowpal_wabbit/*
 datasets/docword.*.txt
+/vcpkg/
 
 # Visual studio garbage
 *.opensdf

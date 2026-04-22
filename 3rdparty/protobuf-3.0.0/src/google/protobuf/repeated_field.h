@@ -51,6 +51,7 @@
 #include <algorithm>
 #endif
 
+#include <cstddef>
 #include <string>
 #include <iterator>
 #include <google/protobuf/stubs/casts.h>
@@ -250,7 +251,7 @@ class RepeatedField {
   // the struct. We can not use sizeof(Arena*) as well because there might be
   // a "gap" after the field arena and before the field elements (e.g., when
   // Element is double and pointer is 32bit).
-  static const size_t kRepHeaderSize;
+  static const size_t kRepHeaderSize = offsetof(Rep, elements);
   // Contains arena ptr and the elements array. We also keep the invariant that
   // if rep_ is NULL, then arena is NULL.
   Rep* rep_;
@@ -289,10 +290,6 @@ class RepeatedField {
     }
   }
 };
-
-template<typename Element>
-const size_t RepeatedField<Element>::kRepHeaderSize =
-    reinterpret_cast<size_t>(&reinterpret_cast<Rep*>(16)->elements[0]) - 16;
 
 namespace internal {
 template <typename It> class RepeatedPtrIterator;

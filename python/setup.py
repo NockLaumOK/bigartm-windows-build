@@ -176,8 +176,9 @@ setup_kwargs = dict(
         'pandas',
         'numpy',
         'packaging',
+        'six',
         'tqdm',
-        'protobuf>=3.0'
+        'protobuf>=3.20.3,<4'
     ],
     # this option must solve problem with installing
     # numpy as dependency during `setup.py install` execution

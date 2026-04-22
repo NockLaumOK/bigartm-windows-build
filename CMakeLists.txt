@@ -35,9 +35,20 @@ if (MSVC)
   add_definitions("-D_VARIADIC_MAX=10")
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
   add_definitions("-D_SCL_SECURE_NO_WARNINGS")
-  add_definitions("/wd4251")
-  add_definitions("/MP")
-  add_definitions("/EHsc")
+  add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/wd4251>)
+  add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/MP>)
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
+
+  foreach(flag_var
+      CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
+      CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
+      CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+      CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+    if (DEFINED ${flag_var})
+      string(REPLACE "/MDd" "/MTd" ${flag_var} "${${flag_var}}")
+      string(REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+    endif ()
+  endforeach()
 else (MSVC)
   if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")

@@ -53,6 +53,8 @@ We suggest [using pre-build binaries](https://bigartm.readthedocs.io/en/master/i
 
 It is also possible to [compile C++ code on Windows](https://bigartm.readthedocs.io/en/master/devguide/dev_build_windows.html) you want the latest development version.
 
+For this patched repository, use [WINDOWS_BUILD_2026.md](WINDOWS_BUILD_2026.md) for modern Windows build steps, including Visual Studio 2022, local `vcpkg` Boost dependencies, and Python API wheel creation.
+
 ### Installing on Linux / MacOS
 Download [binary release](https://github.com/bigartm/bigartm/releases) or build from source using cmake:
 ```bash
