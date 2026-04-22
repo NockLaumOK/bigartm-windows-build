@@ -1,6 +1,6 @@
-# Build BigARTM On Windows (Tested April 18, 2026)
+# Build This Patched BigARTM Repository On Windows (Tested April 18, 2026)
 
-This is an updated Windows build recipe for the latest upstream BigARTM development branch.
+This is an updated Windows build recipe for this patched BigARTM repository.
 
 Official references:
 
@@ -11,7 +11,7 @@ Notes:
 
 - As of April 18, 2026, GitHub still shows `master` as the development branch for BigARTM.
 - The exact head SHA I built locally was `47e37f982de87aa67bfd475ff1f39da696b181b3` from November 10, 2020.
-- The official guide is old. The steps below include the extra fixes needed to build with current Windows tooling.
+- The official guide is old. This repository already contains the extra fixes needed to build with current Windows tooling.
 - This guide was verified on Windows x64 with Visual Studio 2022 Build Tools, CMake, Git, PowerShell, and Python 3.13.
 
 ## 1. Install prerequisites
@@ -30,15 +30,15 @@ Use either:
 
 The commands below assume PowerShell.
 
-## 2. Clone BigARTM and vcpkg
+## 2. Clone this patched repository and vcpkg
 
 ```powershell
-git clone --branch master https://github.com/bigartm/bigartm.git
-cd bigartm
+git clone https://github.com/NockLaumOK/bigartm-windows-build.git
+cd bigartm-windows-build
 git rev-parse HEAD
 ```
 
-Optional check: if upstream has not moved, `git rev-parse HEAD` should print `47e37f982de87aa67bfd475ff1f39da696b181b3`.
+Optional check: `git rev-parse HEAD` should print a commit that includes the modern Windows build fixes. The first patched commit was `2a85668efd7a807fdc654a5ae285fb3c6a43f62c`.
 
 Now clone `vcpkg` inside the repo:
 
@@ -50,132 +50,9 @@ cd vcpkg
 cd ..
 ```
 
-## 3. Apply required source fixes
+Do not manually apply source patches when building from this repository. They are already committed.
 
-### `CMakeLists.txt`
-
-Inside the `if (MSVC)` block:
-
-- replace
-
-```cmake
-add_definitions("/wd4251")
-add_definitions("/MP")
-add_definitions("/EHsc")
-```
-
-- with
-
-```cmake
-add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/wd4251>)
-add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/MP>)
-add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
-
-foreach(flag_var
-    CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
-    CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
-    CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-    CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-  if (DEFINED ${flag_var})
-    string(REPLACE "/MDd" "/MTd" ${flag_var} "${${flag_var}}")
-    string(REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-  endif ()
-endforeach()
-```
-
-### `src/artm/core/helpers.cc`
-
-Add this include:
-
-```cpp
-#include "boost/random/mersenne_twister.hpp"
-```
-
-### `3rdparty/protobuf-3.0.0/src/google/protobuf/stubs/hash.h`
-
-- change
-
-```cpp
-#  define GOOGLE_PROTOBUF_HASH_COMPARE std::hash_compare
-```
-
-- to
-
-```cpp
-#  define GOOGLE_PROTOBUF_MSC_HASH_CXX11
-```
-
-- and change
-
-```cpp
-#elif defined(_MSC_VER) && !defined(_STLPORT_VERSION)
-```
-
-- to
-
-```cpp
-#elif defined(_MSC_VER) && !defined(_STLPORT_VERSION) && \
-    !defined(GOOGLE_PROTOBUF_MSC_HASH_CXX11)
-```
-
-### `3rdparty/protobuf-3.0.0/src/google/protobuf/repeated_field.h`
-
-Add:
-
-```cpp
-#include <cstddef>
-```
-
-Change:
-
-```cpp
-static const size_t kRepHeaderSize;
-```
-
-to:
-
-```cpp
-static const size_t kRepHeaderSize = offsetof(Rep, elements);
-```
-
-Then remove the out-of-class definition:
-
-```cpp
-template<typename Element>
-const size_t RepeatedField<Element>::kRepHeaderSize =
-    reinterpret_cast<size_t>(&reinterpret_cast<Rep*>(16)->elements[0]) - 16;
-```
-
-### `3rdparty/protobuf-3.0.0/src/google/protobuf/compiler/java/java_file.cc`
-
-Change:
-
-```cpp
-bool operator ()(const FieldDescriptor* f1, const FieldDescriptor* f2) {
-```
-
-to:
-
-```cpp
-bool operator ()(const FieldDescriptor* f1, const FieldDescriptor* f2) const {
-```
-
-### `python/setup.py`
-
-In `install_requires`, add `six` and pin protobuf to a compatible version:
-
-```python
-install_requires=[
-    'pandas',
-    'numpy',
-    'packaging',
-    'six',
-    'tqdm',
-    'protobuf>=3.20.3,<4'
-],
-```
-
-## 4. Build the native binaries
+## 3. Build the native binaries
 
 Set Boost paths from the local `vcpkg` install:
 
@@ -214,7 +91,7 @@ Expected outputs:
 - `build-nmake-v143-static\bin\artm.dll`
 - `build-nmake-v143-static\bin\protoc.exe`
 
-## 5. Build and install the Python API
+## 4. Build and install the Python API
 
 Create a virtual environment:
 
@@ -255,14 +132,14 @@ Expected output:
 0.10.1
 ```
 
-## 6. What to remember
+## 5. What to remember
 
 - Native build: use `NMake Makefiles`, not the old Visual Studio generator from the original docs.
 - Boost: install it through local `vcpkg` with triplet `x64-windows-static`.
 - Python API: build the wheel after the native build and use `protobuf==3.20.3` or another `3.20.x` release.
 - The Python package name is `bigartm10`, but the import is `import artm`.
 
-## 7. Quick smoke test
+## 6. Quick smoke test
 
 After activation of the venv:
 
@@ -271,3 +148,14 @@ python -c "import artm; print(artm.version())"
 ```
 
 If that prints `0.10.1`, the Python API is ready.
+
+## 7. What this repository already patches
+
+These fixes are already present in this repository:
+
+- `CMakeLists.txt`: modern MSVC compile-option handling and static runtime flag normalization.
+- `src/artm/core/helpers.cc`: explicit Boost random include needed by current Boost/MSVC.
+- `3rdparty/protobuf-3.0.0/src/google/protobuf/stubs/hash.h`: avoids obsolete `std::hash_compare` on modern MSVC.
+- `3rdparty/protobuf-3.0.0/src/google/protobuf/repeated_field.h`: replaces an old offset calculation with `offsetof`.
+- `3rdparty/protobuf-3.0.0/src/google/protobuf/compiler/java/java_file.cc`: makes an STL comparator const-correct.
+- `python/setup.py`: adds missing `six` dependency and pins protobuf to the compatible `3.20.x` line.
